@@ -1469,7 +1469,26 @@ start_monitor() {
 	if [ $(uci_get_by_type global monitor_enable 1) == "1" ]; then
 		let total_count=server_count+redir_tcp+redir_udp+kcp_enable_flag+local_enable+pdnsd_enable_flag
 		if [ $total_count -gt 0 ]; then
-			service_start /usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $kcp_enable_flag $local_enable $pdnsd_enable_flag
+			local redir_bin=""
+			local _type=$(uci_get_by_name $GLOBAL_SERVER type)
+			case "$_type" in
+			v2ray)
+				redir_bin=$(basename $(first_type xray v2ray))
+				;;
+			hysteria2)
+				redir_bin="hysteria"
+				;;
+			trojan)
+				redir_bin="trojan"
+				;;
+			naiveproxy)
+				redir_bin="naive"
+				;;
+			tuic)
+				redir_bin="tuic-client"
+				;;
+			esac
+			service_start /usr/bin/ssr-monitor $server_count $redir_tcp $redir_udp $kcp_enable_flag $local_enable $pdnsd_enable_flag "$redir_bin"
 		fi
 	fi
 }
@@ -1737,7 +1756,7 @@ stop() {
 		# Force kill hanged programs
 		$PS -w | grep -v "grep" | grep "$TMP_PATH" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 ; \
 	)
-	killall -q -9 v2ray-plugin obfs-local xray-plugin shadow-tls
+	killall -q -9 xray v2ray hysteria v2ray-plugin obfs-local xray-plugin shadow-tls
 	rm -f /var/lock/ssr-monitor.lock
 	if [ "$(uci -q get "dhcp.@dnsmasq[0]._unused_ssrp_changed")" = "1" ]; then
 		uci -q del "dhcp.@dnsmasq[0].noresolv"

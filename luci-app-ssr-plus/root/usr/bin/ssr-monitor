@@ -16,6 +16,7 @@ redir_udp_process=$3
 kcp_process=$4
 local_process=$5
 pdnsd_process=$6
+redir_bin=$7
 if [ -z "$pdnsd_process" ]; then
 	pdnsd_process=0
 fi
@@ -33,6 +34,10 @@ while [ "1" == "1" ]; do #死循环
 	#redir tcp
 	if [ "$redir_tcp_process" -gt 0 ]; then
 		icount=$(busybox ps -w | grep ssr-retcp | grep -v grep | wc -l)
+		# Fallback: check by binary name for v2ray/xray/hysteria etc. when ps
+		# only shows comm name without full cmdline arguments (OpenWrt 25.x busybox)
+		[ "$icount" -eq 0 ] && [ -n "$redir_bin" ] && \
+			icount=$(busybox ps | grep -v grep | awk '{print $NF}' | grep -c "^${redir_bin}$" 2>/dev/null || echo 0)
 		if [ "$icount" == 0 ]; then
 			logger -t "$NAME" "ssrplus redir tcp error.restart!"
 			echolog "ssrplus redir tcp error.restart!"
@@ -43,6 +48,8 @@ while [ "1" == "1" ]; do #死循环
 	#redir udp
 	if [ "$redir_udp_process" -gt 0 ]; then
 		icount=$(busybox ps -w | grep ssr-reudp | grep -v grep | wc -l)
+		[ "$icount" -eq 0 ] && [ -n "$redir_bin" ] && \
+			icount=$(busybox ps | grep -v grep | awk '{print $NF}' | grep -c "^${redir_bin}$" 2>/dev/null || echo 0)
 		if [ "$icount" == 0 ]; then
 			logger -t "$NAME" "ssrplus redir udp error.restart!"
 			echolog "ssrplus redir udp error.restart!"
