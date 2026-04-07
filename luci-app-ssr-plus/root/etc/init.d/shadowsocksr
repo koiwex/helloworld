@@ -1676,6 +1676,10 @@ boot() {
 	start
 }
 
+reload() {
+	restart
+}
+
 stop() {
 	unlock
 	set_lock
