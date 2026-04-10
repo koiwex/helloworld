@@ -1674,8 +1674,7 @@ start() {
 	if [ "$USE_TABLES" = "nftables" ]; then
 		local CURRENT_SERVER="$(uci_get_by_type global global_server nil)"
 		if [ "$CURRENT_SERVER" != "nil" ]; then
-			uci set shadowsocksr.@global[0].old_global_server="$CURRENT_SERVER"
-			uci commit shadowsocksr
+			echo "$CURRENT_SERVER" > /tmp/ssrplus_old_server
 		fi
 	fi
 	start_server
@@ -1717,13 +1716,13 @@ stop() {
 			mv "$PERSIST_FILE" "$BACKUP_FILE"
 		fi
 		/usr/bin/ssr-rules -K
-		local OLD_SERVER="$(uci_get_by_type global old_global_server nil)"
+		local OLD_SERVER="nil"
+		[ -f /tmp/ssrplus_old_server ] && OLD_SERVER="$(cat /tmp/ssrplus_old_server)"
 		local NEW_SERVER="$(uci_get_by_type global global_server nil)"
 		if [ "$OLD_SERVER" != "nil" ] && [ "$NEW_SERVER" != "nil" ] && [ "$OLD_SERVER" != "$NEW_SERVER" ]; then
 			/usr/bin/ssr-rules -X
 		fi
-		uci delete shadowsocksr.@global[0].old_global_server 2>/dev/null
-		uci commit shadowsocksr
+		rm -f /tmp/ssrplus_old_server
 	fi
 	/usr/bin/ssr-rules -f
 	local srulecount=0
