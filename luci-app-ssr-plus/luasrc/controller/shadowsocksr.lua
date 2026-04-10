@@ -231,7 +231,13 @@ end
 
 function refresh_data()
 	local set = luci.http.formvalue("set")
-	local retstring = loadstring("return " .. luci.sys.exec("/usr/bin/lua /usr/share/shadowsocksr/update.lua " .. set))()
+	local allowed = {gfw_data=true, ip_data=true, apple_data=true, ad_data=true, nfip_data=true}
+	if set and not allowed[set] then
+		luci.http.status(400, "Bad Request")
+		return
+	end
+	local cmd_arg = set and (" " .. set) or ""
+	local retstring = loadstring("return " .. luci.sys.exec("/usr/bin/lua /usr/share/shadowsocksr/update.lua" .. cmd_arg))()
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(retstring)
 end
